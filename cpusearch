@@ -1,0 +1,110 @@
+#!/usr/bin/env python3
+
+import requests
+from bs4 import BeautifulSoup
+import urllib.parse
+import sys
+
+
+def google_search(query):
+    query = urllib.parse.quote_plus(query)
+    url = f"https://www.google.com/search?q={query}"
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+    response = requests.get(url, headers=headers)
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+
+    firstlink = None
+    for a in soup.find_all('a', href=True):
+        href = a['href']
+        if 'cpubenchmark.net' in href:
+            tagurl="""url=https://www.cpubenchmark.net/cpu.php"""
+            start_index = href.find(tagurl) + 4
+            end_index = href.find('&', start_index)
+            if end_index == -1:
+                end_index = None
+            firstlink = href[start_index:end_index]
+            firstlink = urllib.parse.unquote(firstlink)
+            break
+
+    return firstlink
+
+
+def fetch_result(url):
+    color_code = '#F48A18'
+    response = requests.get(url)
+    html_content = response.text
+
+    soup = BeautifulSoup(html_content, 'html.parser')
+
+    ratings = []
+    for div in soup.find_all('div', style=True):
+        style = div.get('style', '')
+        if color_code in style:
+            ratings.append(div.get_text(strip=True))
+
+    name = soup.find('div', class_='productheader')
+    name = name.get_text(strip=True)
+
+    data = [] 
+    dats = soup.find_all('div', class_='left-desc-cpu')
+    for d in dats:
+        for ele in d.find_all('p'):
+            data.append(ele)
+
+    dats = soup.find_all('div', class_='desc-foot')
+    for d in dats:
+        for ele in d.find_all('p'):
+            data.append(ele)
+
+    dats = soup.find_all('div', class_='desc-body')
+    for d in dats:
+        for ele in d.find_all('p'):
+            data.append(ele)
+
+    socket = None
+    power = None
+    cores = None
+    pPERp = None
+
+    for line in data:
+        #print(line)
+        if 'Socket:' in line.text and not socket:
+            socket = line.contents[1].strip()
+        if 'TDP:' in line.text and not power:
+            power = line.contents[1].strip()
+        if 'Cores' in line.text and not cores:
+            cores = line.text
+        if 'CPUmark/$Price:' in line.text and not pPERp:
+            pPERp = line.text
+
+    if not socket:
+        socket = "unknown"
+    if not power:
+        power = "unknown"
+    if not cores:
+        cores = "unknown"
+    if not pPERp:
+        pPERp = "unknown"
+
+    return name, ratings, cores, socket, power, pPERp
+
+def main():
+    query = "passmark " + " ".join(sys.argv)
+
+    link = google_search(query)
+    if not link:
+        print("No link found")
+        sys.exit()
+    elif "cpubenchmark.net" not in link:
+        print("No valid result found")
+        sys.exit()
+
+    vals = fetch_result(link)
+    print(vals)
+
+
+
+if __name__ == "__main__":
+    main()
