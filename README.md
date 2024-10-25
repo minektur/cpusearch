@@ -15,7 +15,7 @@ cpubenchmarks.net.  It then scrapes a bunch of data about that cpu and prints it
 
 It's not clean code, but it works.
 
-#examples
+## examples
 
     $ cpusearch Xeon® processor D-1537
     ('Intel Xeon D-1537 @ 1.70GHz', ['7444', '1225'], 'Cores: 8 Threads: 16', 'FCBGA1667', '35 W', 'CPUmark/$Price: 13.04')
