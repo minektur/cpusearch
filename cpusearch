@@ -5,12 +5,11 @@ from bs4 import BeautifulSoup
 import urllib.parse
 import sys
 
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
 
 def google_search(query):
     query = urllib.parse.quote_plus(query)
     url = f"https://www.google.com/search?q={query}"
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
     response = requests.get(url, headers=headers)
 
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -33,8 +32,13 @@ def google_search(query):
 
 def fetch_result(url):
     color_code = '#F48A18'
-    response = requests.get(url)
+    response = requests.get(url, headers=headers)
     html_content = response.text
+
+    #<title>403 Forbidden</title>
+    if "403 Forbidden" in html_content:
+        print("Error - can't get passmark rating\n",url, html_content)
+        sys.exit(1)
 
     soup = BeautifulSoup(html_content, 'html.parser')
 
