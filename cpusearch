@@ -5,27 +5,38 @@ from bs4 import BeautifulSoup
 import urllib.parse
 import sys
 
-headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3'}
+
+#headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0', }
+#enough headers to look legit-ish
+headers = {
+    "Host": "lite.duckduckgo.com",
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "en-US,en;q=0.5",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "DNT": "1",
+    "Connection": "keep-alive",
+    "Upgrade-Insecure-Requests": "1",
+}
+
 
 def google_search(query):
-    query = urllib.parse.quote_plus(query)
-    url = f"https://www.google.com/search?q={query}"
-    response = requests.get(url, headers=headers)
+
+    url = f"https://lite.duckduckgo.com/lite/" 
+    data = {'q': query}
+    response = requests.post(url, data=data)
+
+    if 'anomaly' in response.text:
+        print("DDG thinks we're a bot!")
+        return None
 
     soup = BeautifulSoup(response.text, 'html.parser')
+    first_span = soup.find('span', class_='link-text') 
+    firstlink = "https://" + first_span.get_text() if first_span else None
 
-    firstlink = None
-    for a in soup.find_all('a', href=True):
-        href = a['href']
-        if 'cpubenchmark.net' in href:
-            tagurl="""url=https://www.cpubenchmark.net/cpu.php"""
-            start_index = href.find(tagurl) + 4
-            end_index = href.find('&', start_index)
-            if end_index == -1:
-                end_index = None
-            firstlink = href[start_index:end_index]
-            firstlink = urllib.parse.unquote(firstlink)
-            break
+    #didn't find a specific proc page - get the main page as first result
+    if firstlink == 'https://www.cpubenchmark.net':
+        return None
 
     return firstlink
 
@@ -95,7 +106,7 @@ def fetch_result(url):
     return name, ratings, cores, socket, power, pPERp
 
 def main():
-    query = "passmark " + " ".join(sys.argv)
+    query = "cpubenchmark " + " ".join(sys.argv[1:])
 
     link = google_search(query)
     if not link:
