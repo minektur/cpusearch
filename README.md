@@ -10,7 +10,7 @@ server more or less powerful than that other one there?  I'm not saying I spend 
 like this, but well, I do.
 
 ## what?
-This very-hacky script google searches the cpu terms you give on the command line and then finds that on
+This very-hacky script internet searches (currently DDG)  the cpu terms you give on the command line and then finds that on
 cpubenchmarks.net.  It then scrapes a bunch of data about that cpu and prints it out in a single line.
 
 It's not clean code, but it works.
