@@ -5,38 +5,37 @@ from bs4 import BeautifulSoup
 import urllib.parse
 import sys
 
-
-#headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0', }
-#enough headers to look legit-ish
 headers = {
-    "Host": "lite.duckduckgo.com",
-    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:137.0) Gecko/20100101 Firefox/137.0",
-    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-    "Accept-Language": "en-US,en;q=0.5",
-    "Accept-Encoding": "gzip, deflate, br, zstd",
-    "DNT": "1",
-    "Connection": "keep-alive",
-    "Upgrade-Insecure-Requests": "1",
+     "User-Agent": "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:141.0) Gecko/20100101 Firefox/141.0",
+     "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+     "Accept-Language": "en-US,en;q=0.5",
+     "Accept-Encoding": "gzip, deflate, br, zstd",
+     "Referer": "https://html.duckduckgo.com/",
+     "Origin": "https://html.duckduckgo.com"
 }
 
+def web_search(query):
 
-def google_search(query):
+    url = f"https://html.duckduckgo.com/html/" 
+    data = {
+            'q': query,
+            'kl': 'us-en'
+            }
 
-    url = f"https://lite.duckduckgo.com/lite/" 
-    data = {'q': query}
-    response = requests.post(url, data=data)
+    response = requests.post(url, headers=headers, data=data)
 
     if 'anomaly' in response.text:
         print("DDG thinks we're a bot!")
         return None
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    first_span = soup.find('span', class_='link-text') 
-    firstlink = "https://" + first_span.get_text() if first_span else None
-
-    #didn't find a specific proc page - get the main page as first result
-    if firstlink == 'https://www.cpubenchmark.net':
-        return None
+    results= soup.find_all(class_='result__a') 
+    first = None
+    for i in results:
+        if "www.cpubenchmark.net/cpu.php" in i.attrs['href']:
+            first = i.attrs['href']
+            break
+    firstlink = first if first else None
 
     return firstlink
 
@@ -108,7 +107,7 @@ def fetch_result(url):
 def main():
     query = "cpubenchmark " + " ".join(sys.argv[1:])
 
-    link = google_search(query)
+    link = web_search(query)
     if not link:
         print("No link found")
         sys.exit()
